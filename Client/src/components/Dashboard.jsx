@@ -8,7 +8,7 @@ const Dashboard = () => {
   const [userData, setUserData] = useState(null);
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
-  const [resetError, setResetError] = useState([]);
+  const [resetError, setResetError] = useState("");
   const token = useSelector((state) => state.auth.token);
 
   const fetchUserData = async () => {
@@ -34,14 +34,23 @@ const Dashboard = () => {
     setShowResetForm(!showResetForm);
   };
 
-  const handlePasswordReset = async (formData) => {
+  const handlePasswordReset = async ({
+    oldPassword,
+    newPassword,
+    confirmPassword,
+  }) => {
     try {
-      console.log("Reset Password Form Data:", formData);
-      if (formData.newPassword === formData.confirmPassword) {
+      console.log("Reset Password Form Data:", {
+        oldPassword,
+        newPassword,
+        confirmPassword,
+      });
+      if (newPassword === confirmPassword) {
         await axios.post(
           "http://localhost:3000/reset-password",
           {
-            newPassword: formData.newPassword,
+            oldPassword,
+            newPassword,
           },
           {
             headers: {
@@ -50,17 +59,18 @@ const Dashboard = () => {
           }
         );
         setResetSuccess(true);
-        setResetError([]);
+        setShowResetForm(false);
+        setResetError("");
       } else {
         // Passwords don't match, show error
-        
+
         setResetSuccess(false);
         setResetError(["New password and confirm password do not match"]);
       }
     } catch (error) {
-      console.error("Error resetting password:", error);
+      console.error("Error resetting password:", error.response.data.message);
       setResetSuccess(false);
-      setResetError(["Error resetting password. Please try again later."]);
+      setResetError(error.response.data.message);
     }
   };
 
@@ -87,11 +97,7 @@ const Dashboard = () => {
         {userData && (
           <>
             {userData.photo === null ? (
-              <img
-                src="../../public/profile.png"
-                className="profile-image"
-                alt="photo"
-              />
+              <img src="/profile.png" className="profile-image" alt="photo" />
             ) : (
               <img
                 src={userData.photo}
@@ -116,9 +122,8 @@ const Dashboard = () => {
             <button onClick={toggleResetForm}>Reset Password</button>
             {showResetForm && <PasswordReset onSubmit={handlePasswordReset} />}
             {resetSuccess && <p>Password reset successful!</p>}
-            {resetError.length > 0 && (
-              <p className="error">{resetError.join(", ")}</p>
-            )}
+
+            {resetError && <p className="error">{resetError}</p>}
           </>
         )}
       </div>

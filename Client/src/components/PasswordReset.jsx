@@ -3,6 +3,7 @@ import { useState } from "react";
 
 const PasswordResetForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
+    oldPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -18,9 +19,9 @@ const PasswordResetForm = ({ onSubmit }) => {
     e.preventDefault();
     try {
       await onSubmit(formData);
-      setSuccessMessage("Password reset successful");
+
       setErrorMessage("");
-      setFormData({ newPassword: "", confirmPassword: "" });
+      setFormData({ oldPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error) {
       setSuccessMessage("");
       setErrorMessage("Error resetting password. Please try again later.");
@@ -30,6 +31,17 @@ const PasswordResetForm = ({ onSubmit }) => {
 
   return (
     <form onSubmit={handleSubmit}>
+      <div>
+        <label htmlFor="oldPassword">Old Password:</label>
+        <input
+          type="password"
+          id="oldPassword"
+          name="oldPassword"
+          value={formData.oldPassword}
+          onChange={handleChange}
+          required
+        />
+      </div>
       <div>
         <label htmlFor="newPassword">New Password:</label>
         <input

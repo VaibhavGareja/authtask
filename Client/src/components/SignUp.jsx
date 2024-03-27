@@ -3,8 +3,8 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { signupUser } from "../store/authSlice";
+// import { useDispatch } from "react-redux";
+// import { signupUser } from "../store/authSlice";
 import FormikController from "./form/FormikController";
 
 const initialValues = {
@@ -17,7 +17,7 @@ const initialValues = {
 };
 
 const SignUp = () => {
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const SignUpSchema = Yup.object({
@@ -36,7 +36,11 @@ const SignUp = () => {
       .min(10, "Phone number must be exactly 10 digits ")
       .max(10, "Phone number must be exactly 10 digits ")
       .required("Please enter the number"),
-    DOB: Yup.date().required("Date of Birth is required"),
+    DOB: Yup.date()
+      .required("Date of Birth is required")
+      .max(new Date("2009-01-01"), "You must be at least 15 years old")
+      .min(new Date("1974-01-01"), "You are too old to sign up"),
+
     password: Yup.string()
       .min(8, "Password must be at least 8 characters")
       .required("Please enter your password"),
@@ -48,7 +52,6 @@ const SignUp = () => {
   const onSubmit = async (values) => {
     try {
       const response = await axios.post("http://localhost:3000/signup", values);
-      dispatch(signupUser(values));
 
       if (response.status === 200) {
         setSignupMessage(
@@ -80,6 +83,7 @@ const SignUp = () => {
                 control="input"
                 type="text"
                 label="First Name"
+                placeholder="Enter the First Name "
                 name="Fname"
                 formikProps={formikProps}
               />
@@ -88,6 +92,7 @@ const SignUp = () => {
                 type="text"
                 label="Last Name"
                 name="Lname"
+                placeholder="Enter the Last Name "
                 formikProps={formikProps}
               />
               <FormikController
@@ -95,6 +100,7 @@ const SignUp = () => {
                 type="email"
                 label="Email"
                 name="email"
+                placeholder="Enter the Email "
                 formikProps={formikProps}
               />
               <FormikController
@@ -102,19 +108,30 @@ const SignUp = () => {
                 type="number"
                 label="Phone Number"
                 name="phoneno"
+                placeholder="Enter the Phone no "
                 formikProps={formikProps}
               />
               <FormikController
-                control="input"
+                control="date"
                 type="date"
-                label="Date of Birth"
+                label="DOB"
                 name="DOB"
+                placeholder="Enter the DOB "
                 formikProps={formikProps}
               />
+
+              {/* <FormikController
+                control="input"
+                label="Date of Birth"
+                name="DOB"
+                onkeydown="return false"
+                formikProps={formikProps}
+              /> */}
               <FormikController
                 control="input"
                 type="password"
                 label="Password"
+                placeholder="Enter the Password"
                 name="password"
                 formikProps={formikProps}
               />
