@@ -1,18 +1,24 @@
 /* eslint-disable react/prop-types */
 
-import { ErrorMessage } from "formik";
+import { ErrorMessage, getIn } from "formik";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 function DateElement({ label, name, formikProps }) {
-  const { setFieldValue } = formikProps;
-
+  const { setFieldValue, setFieldTouched } = formikProps;
+  const handleDateChange = (date) => {
+    setFieldValue(name, date);
+    setFieldTouched(name, true, false);
+    formikProps.validateField(name);
+  };
+  const fieldError = getIn(formikProps.errors, name);
   return (
     <div className="input">
       <label htmlFor={name}>{label}:</label>
-
+      
       <DatePicker
         selected={formikProps.values[name]}
-        onChange={(date) => setFieldValue(name, date)}
+        onChange={handleDateChange}
+        onBlur={() => setFieldTouched(name, true)}
         peekNextMonth
         showMonthDropdown
         showYearDropdown
@@ -22,7 +28,7 @@ function DateElement({ label, name, formikProps }) {
         dateFormat="dd/MM/yyyy"
         showDateMonthYearPicker
       />
-      <ErrorMessage name={name} component="div" className="error" />
+      {fieldError && <ErrorMessage name={name} component="div" className="error" />}
     </div>
   );
 }

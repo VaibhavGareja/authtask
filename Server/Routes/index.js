@@ -1,4 +1,7 @@
 const express = require("express");
+const fs = require("fs");
+
+const path = require("path");
 const router = express.Router();
 const User = require("../model/User");
 require("dotenv").config();
@@ -7,6 +10,7 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const transporter = require("../helper/email");
 const verifyToken = require("../middleware/auth");
+const upload = require("../middleware/upload-photo");
 
 router.post("/signup", async (req, res) => {
   try {
@@ -158,33 +162,45 @@ router.get("/user", verifyToken, async (req, res) => {
   }
 });
 
-router.post("/upload-photo", verifyToken, async (req, res) => {
-  try {
-    const { fileUrl } = req.body;
+router.post(
+  "/upload-photo",
+  verifyToken,
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      const fileUrl = req.file.path;
+      const userId = req.user.id;
+      const user = await User.findByPk(userId);
 
-    // Check if fileUrl is provided
-    if (!fileUrl) {
-      return res.status(400).json({ message: "No file URL provided" });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.photo) {
+        const previousPhotoPath = path.join(__dirname, "..", user.photo);
+        if (fs.existsSync(previousPhotoPath)) {
+          // Check if the file exists before attempting to delete
+          fs.unlinkSync(previousPhotoPath); // Delete the file from the server
+        } else {
+          console.warn("Previous photo does not exist at:", previousPhotoPath);
+        }
+      }
+      // Update the user's photo field with the new URL
+      user.photo = fileUrl;
+      await user.save();
+
+      return res
+        .status(200)
+        .json({ message: "Photo uploaded successfully", fileUrl });
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
     }
-
-    // Find the authenticated user
-    const userId = req.user.id;
-    const user = await User.findByPk(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Update the user's photo field with the new URL
-    user.photo = fileUrl;
-    await user.save();
-
-    return res.status(200).json({ message: "Photo uploaded successfully" });
-  } catch (error) {
-    console.error("Error uploading photo:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
   }
-});
+);
 
 router.post("/reset-password", verifyToken, async (req, res) => {
   try {
@@ -202,7 +218,9 @@ router.post("/reset-password", verifyToken, async (req, res) => {
     const isSamePassword = await bcrypt.compare(newPassword, user.password);
 
     if (isSamePassword) {
-      return res.status(400).json({ message: "New password must be different from old password" });
+      return res
+        .status(400)
+        .json({ message: "New password must be different from old password" });
     }
 
     // Hash the new password and update user's password
@@ -216,7 +234,6 @@ router.post("/reset-password", verifyToken, async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });
-
 
 router.post("/forgot-password", async (req, res) => {
   try {
